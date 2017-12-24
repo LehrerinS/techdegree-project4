@@ -3,15 +3,17 @@ package com.teamtreehouse.blog;
 import com.teamtreehouse.blog.dao.BlogDao;
 import com.teamtreehouse.blog.dao.SimpleBlogDao;
 import com.teamtreehouse.blog.model.BlogEntry;
+import com.teamtreehouse.blog.model.CommentEntry;
+import org.antlr.v4.runtime.atn.SemanticContext;
 import spark.ModelAndView;
 import spark.template.handlebars.HandlebarsTemplateEngine;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-import static spark.Spark.get;
-import static spark.Spark.staticFileLocation;
+import static spark.Spark.*;
 import static spark.route.HttpMethod.get;
 
 public class Main {
@@ -28,12 +30,67 @@ public class Main {
 
         staticFileLocation("/public");
 
+        before((req, res) -> {
+            if (req.cookie("password") != null) {
+                req.attribute("password", req.cookie("password"));
+            }
+        });
+
+        before("/blogs/new", (req, res)->{
+            if(req.attribute("password") == null){
+                res.redirect("/blogs/password");
+                halt();
+            }
+        });
+
 
         get("/", (req, res) -> {
             Map<String, Object> model = new HashMap<>();
             model.put("blogs", dao.findAllEntries());
             return new ModelAndView(model, "index.hbs");
         }, new HandlebarsTemplateEngine());
+
+        get("/blogs/new", (req, res) -> {
+            return new ModelAndView(null, "new.hbs");
+        }, new HandlebarsTemplateEngine());
+
+        post("/", (req, res) -> {
+            String title = req.queryParams("title");
+            String body = req.queryParams("entry");
+            if(!title.equals("")) {
+                BlogEntry newEntry = new BlogEntry(title, new Date(), body);
+                dao.addEntry(newEntry);
+            }
+            res.redirect("/");
+            return null;
+        });
+
+        get("/blogs/password", (req, res) -> {
+            Map<String, String> model = new HashMap<>();
+            String providedPassword = req.cookie("password");
+            model.put("password", providedPassword);
+            return new ModelAndView(model, "password.hbs");
+        }, new HandlebarsTemplateEngine());
+
+        post("/blogs/password", (req, res) -> {
+            Map<String, String> model = new HashMap<>();
+            String userGivenPassword = req.queryParams("password");
+            if (userGivenPassword.equals("admin")) {
+                res.cookie("password", userGivenPassword);
+                model.put("password", userGivenPassword);
+            }
+//            TODO: sanja add flash message if wrong pass is given, in order to try it again
+            res.redirect("/blogs/password");
+            return null;
+//            return new ModelAndView(model, "password.hbs");
+        });
+
+        before("/blogs/:slug/edit", (req, res)->{
+            if(req.attribute("password") == null){
+                res.redirect("/blogs/password");
+                halt();
+            }
+        });
 
         get("/blogs/:slug", (req, res) -> {
             Map<String, Object> model = new HashMap<>();
@@ -46,6 +103,41 @@ public class Main {
             model.put("blog", dao.findEntryBySlug(req.params("slug")));
             return new ModelAndView(model, "edit.hbs");
         }, new HandlebarsTemplateEngine());
+
+        post("/blogs/:slug/tag", (req, res) -> {
+            BlogEntry foundEntry = dao.findEntryBySlug(req.params("slug"));
+            boolean added = foundEntry.addTags(req.queryParams("tag"));
+            res.redirect("/");
+            return null;
+        });
+
+        post("/blogs/:slug", (req, res) -> {
+            BlogEntry foundEntry = dao.findEntryBySlug(req.params("slug"));
+            List<CommentEntry> foundComments = foundEntry.getComments();
+            if (req.queryParams("title")!=null || req.queryParams("entry")!=null) {
+                dao.removeEntry(foundEntry);
+                String title = req.queryParams("title");
+                String body = req.queryParams("entry");
+                BlogEntry newEntry = new BlogEntry(title, new Date(), body, foundComments);
+                dao.addEntry(newEntry);
+                res.redirect("/");
+            }
+            else if (req.queryParams("name")!=null || req.queryParams("comment")!=null){
+                String name = req.queryParams("name");
+                String comment = req.queryParams("comment");
+                CommentEntry newComment = new CommentEntry(name, new Date(), comment);
+                foundComments.add(newComment);
+            res.redirect("/");
+            }
+            return null;
+        });
+
+        post("/blogs/:slug/delete", (req, res) -> {
+            BlogEntry foundEntry = dao.findEntryBySlug(req.params("slug"));
+            dao.removeEntry(foundEntry);
+            res.redirect("/");
+            return null;
+        });
 
     }
 

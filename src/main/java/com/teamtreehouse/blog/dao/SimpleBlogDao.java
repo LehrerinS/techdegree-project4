@@ -19,6 +19,11 @@ public class SimpleBlogDao implements BlogDao {
     }
 
     @Override
+    public boolean removeEntry(BlogEntry blogEntry) {
+        return blogs.remove(blogEntry);
+    }
+
+    @Override
     public List<BlogEntry> findAllEntries() {
         return blogs;
     }

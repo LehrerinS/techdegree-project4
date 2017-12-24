@@ -7,6 +7,8 @@ import java.util.List;
 public interface BlogDao {
     boolean addEntry(BlogEntry blogEntry);
 
+    boolean removeEntry(BlogEntry blogEntry);
+
     List<BlogEntry> findAllEntries();
 
     BlogEntry findEntryBySlug(String slug);

@@ -3,13 +3,14 @@
             <div class="container">
                 <div class="edit-entry">
                     <h2>Edit Entry</h2>
-                    <form>
-                        <label for="title"> {{ blog.title }}</label>
-                        <input type="text" name="title"><br>
-                        <label for="entry">{{ blog.body }}</label>
-                        <textarea rows="5" name="entry"></textarea>
-                        <input type="submit" value="Save Entry" class="button">
-                        <a href="#" class="button button-secondary">Cancel</a>
+                    <form action="/blogs/{{ blog.slug }}" method="post">
+                        <input type="text" value="{{ blog.title }}" name="title"><br>
+                        <textarea rows="5" name="entry">{{ blog.body }}</textarea>
+                        <button class="button">Save Entry</button> <a href="/blogs/{{ blog.slug }}" class="button button-secondary">Cancel</a>
+                    </form>
+                    <br>
+                    <form action="/blogs/{{ blog.slug }}/delete" method="post">
+                        <button class="button">Delete Entry</button>
                     </form>
                 </div>
             </div>

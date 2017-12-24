@@ -6,6 +6,15 @@
                         <article>
                             <h2><a href="/blogs/{{ slug }}">{{ title }}</a></h2>
                             <time datetime="2016-01-31 1:00">{{ createdDate }}</time>
+                            <p></p>
+                                <form action="/blogs/{{ slug }}/tag" method="post">
+                                    <input input[type=text]:hover name="tag"> <button class="button button-round tag">Add tag</button>
+                                </form>
+                                {{#if tags}}
+                                    {{#each tags}}
+                                        <p1 style="display:inline">{{ this }}</p1>
+                                    {{/each}}
+                                {{/if}}
                         </article>
                     {{/each}}
                 </div>
